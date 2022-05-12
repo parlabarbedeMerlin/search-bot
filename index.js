@@ -1,140 +1,197 @@
-const { Client, MessageEmbed } = require('discord.js');
-const pagination = require('discord.js-pagination');
-const client = new Client();
+const Discord = require('discord.js');
+const config = require('./config.json');
+const Builder = require('@discordjs/builders');
+const client = new Discord.Client({
+    intents: [
+        Discord.Intents.FLAGS.GUILDS,
+        Discord.Intents.FLAGS.GUILD_MESSAGES
+    ]
+})
+
+
+function occurenceofword(word, sentence) {
+    if ((sentence.match(new RegExp(word, "g")) || []).length >= 1) {
+        return true;
+    }
+    return false;
+}
+function occurenceoflist(wordlist, sentence) {
+    for (let i = 0; i < wordlist.length; i++) {
+        if (occurenceofword(wordlist[i], sentence)) {
+            return true;
+        }
+    }
+    return false;
+}
+const comment=['commen','comen','comman','coman']
+const faire=['faire','fais','fait','faire']
+const créer=['créer','crée','cré','crée']
+
+function ishelp(message) {
+    const content = message.content.toLowerCase();
+    if (occurenceoflist(comment, content) && (occurenceoflist(faire, content) || occurenceoflist(créer, content))) {
+        return true;
+    }
+}
+
+
+const serp = require("serp");
+
+async function ggsearch(s,x){
+    var options = {host : "google.fr", qs : {q : s+" "+x, filter : 0, pws : 0}, num : 10};
+    const links = await serp.search(options);
+    var linkr= [];
+    var title = [];
+    for (var i = 0; i < links.length; i++){
+        linkr.push(links[i]['url']);
+        title.push(links[i]['title']);
+    }
+    return [linkr,title];
+}
+
+const ping = new Builder.SlashCommandBuilder()
+    .setName('ping')
+    .setDescription('Pong !')
+
+const help = new Builder.SlashCommandBuilder()
+    .setName('help')
+    .setDescription('Aide')
+
+const search = new Builder.SlashCommandBuilder()
+    .setName('search')
+    .setDescription('recherche sur google')
+    .addStringOption(option => option.setName('search').setDescription('choisissez le moteur de recherche').setRequired(true).addChoice('google','google').addChoice('mcreator','mcreator').addChoice('java documentation','java documentation').addChoice('forge java','forge java').addChoice('forge java docs','forge java docs'))
+    .addStringOption(option => option.setName('input').setDescription('Enter a string').setRequired(true))
 
 client.on('ready', () => {
-  console.log(`Logged in as ${client.user.tag}!`);
+    console.log(`Logged in as ${client.user.tag}!`);
+
+    client.application.commands.create(ping)
+    client.application.commands.create(help)
+    client.application.commands.create(search)
+
+    new Builder.ContextMenuCommandBuilder()
+        .setName('ping')
+        .setType(2)
+
+
+    client.user.setActivity("/help", {type: config.activity[1]})
 });
 
-client.on('message', msg => {
-    if (msg.content === 'ping') {
-        client.channels.get("840689482566729779").send("pong");
+client.on('messageCreate',message => {
+    console.log(message.channel.type)
+    if(((message.author.bot)== false) && ((message.channelId==674189719789240320)|| (message.channelId==725398786033320087) || true)){
+        console.log(message.content)
+        if (ishelp(message)) {
+            searchwgg2(message)
+        }
     }
-    else if (msg.content === 'what is my avatar') {
-        msg.reply(msg.author.displayAvatarURL());
+})
+
+client.on("interaction", interaction => {
+    if(interaction.isCommand()){
+        if(interaction.commandName === "ping"){
+            pingr(interaction)
+        }else if(interaction.commandName === "help"){
+            pingv(interaction)
+        }else if(interaction.commandName === "search"){
+
+                try {
+                    searchwgg(interaction)
+                }catch (e) {
+                    const embed = new Discord.MessageEmbed()
+                        .setTitle("Erreur")
+                        .setDescription("Une erreur est survenue")
+                        .setColor(0xFF0000)
+                        .setFooter("Erreur")
+                    interaction.reply({embed: [embed] , ephemeral: true})
+                }
+
+        }
+    }else if (interaction.isButton()){
+        if (interaction.customId === "Ping"){
+            pingr(interaction)
+        }
     }
-    else if (msg.content === 'brain info') {
-        msg.delete();
-        const embed = new MessageEmbed()
-            .setColor('#c96b8d')
-            .setTitle('Info du bot')
-            .setURL(client.user.displayAvatarURL())
-            .setAuthor('Brain bot', client.user.displayAvatarURL(), 'http://qdqsxsqdsqkhnkdjsnniufhksjdniohdlskkoihsollikh.com/')
-            .setDescription('Tout ce que vous devez savoir concernant le bot réalisé par "par la barbe de Merlin" !')
-            .setThumbnail('https://cdn.discordapp.com/avatars/536799645205135361/93860d695cb7ac4a12462d00af31ba0e.webp')
-            .addFields(
-                { name: 'Les Info', value: 'Brain bot est une ia qui répond a la commande bb!<sujet> en cherchant sur le site https://haze-code.com le tuto associé a la recherche.\n Pour l\'instant sur le site les tuto dispo sont les suivants :\n ` id |     nom     | publique ? |           url           `\n` 01 |   exemple   |    `:white_check_mark:`     | https://haze-code.com/  `\n` 02 |   exemple   |    `:x:`     | https://haze-code.com/  `\n` 03 |   exemple   |    `:white_check_mark:`     | https://haze-code.com/  `\n` 04 |   exemple   |    `:x:`     | https://haze-code.com/  `\n` 05 |   exemple   |    `:white_check_mark:`     | https://haze-code.com/  `\n` 06 |   exemple   |    `:x:`     | https://haze-code.com/  `\n` 07 |   exemple   |    `:white_check_mark:`     | https://haze-code.com/  `\n` 08 |   exemple   |    `:x:`     | https://haze-code.com/  `\n` 09 |   exemple   |    `:white_check_mark:`     | https://haze-code.com/  `\n` 10 |   exemple   |    `:x:`     | https://haze-code.com/  `\n \n page 4/5' },
-                { name: '\u200B', value: '\u200B' },
-                //{ name: 'Inline field title', value: 'Some value here', inline: true },
-                //{ name: 'Inline field title', value: 'Some value here', inline: true },
-                //{ name: 'Inline field title', value: 'Some value here', inline: true },
-                //{ name: 'Inline field title', value: 'Some value here', inline: true },
-                //{ name: 'Inline field title', value: 'Some value here', inline: true },
-            )
-            //.addField('Inline field title', 'Some value here', true)
-            .setImage(client.user.displayAvatarURL())
-            .setTimestamp()
-            .setFooter('Brain bot', client.user.displayAvatarURL());
-        msg.channel.send(embed).then(msg => {
-            msg.react('⏮️').then(r => {
-                msg.react('⏭️')})});
+})
 
 
-
-  }else if(msg.content === 'pages'){
-    const page1 = new MessageEmbed()
-    .setColor('#c96b8d')
-    .setTitle('Info du bot')
-    .setURL(client.user.displayAvatarURL())
-    .setAuthor('Brain bot', client.user.displayAvatarURL(), 'http://qdqsxsqdsqkhnkdjsnniufhksjdniohdlskkoihsollikh.com/')
-    .setDescription('Tout ce que vous devez savoir concernant le bot réalisé par "par la barbe de Merlin" !')
-    .setThumbnail('https://cdn.discordapp.com/avatars/536799645205135361/93860d695cb7ac4a12462d00af31ba0e.webp')
-    .addFields(
-        { name: 'Les Info', value: 'Brain bot est répond a la commande bb!<sujet> en cherchant sur le site https://haze-code.com le tuto associé a la recherche.\n Pour l\'instant sur le site les tuto dispo sont les suivants :\n ` id |     nom     | publique ? |           url           `\n'+ contentp1 },
-        { name: '\u200B', value: '\u200B' },
-    )
-    .setImage(client.user.displayAvatarURL())
-    .setTimestamp()
-    .setFooter('Brain bot', client.user.displayAvatarURL());
-
-    const page2 = new MessageEmbed()
-    .setColor('#c96b8d')
-    .setTitle('Info du bot')
-    .setURL(client.user.displayAvatarURL())
-    .setAuthor('Brain bot', client.user.displayAvatarURL(), 'http://qdqsxsqdsqkhnkdjsnniufhksjdniohdlskkoihsollikh.com/')
-    .setDescription('Tout ce que vous devez savoir concernant le bot réalisé par "par la barbe de Merlin" !')
-    .setThumbnail('https://cdn.discordapp.com/avatars/536799645205135361/93860d695cb7ac4a12462d00af31ba0e.webp')
-    .addFields(
-        { name: 'Les Info', value: 'Brain bot est répond a la commande bb!<sujet> en cherchant sur le site https://haze-code.com le tuto associé a la recherche.\n Pour l\'instant sur le site les tuto dispo sont les suivants :\n ` id |     nom     | publique ? |           url           `\n` 01 |   exemple   |    `:white_check_mark:`     | https://haze-code.com/  `\n` 02 |   exemple   |    `:x:`     | https://haze-code.com/  `\n` 03 |   exemple   |    `:white_check_mark:`     | https://haze-code.com/  `\n` 04 |   exemple   |    `:x:`     | https://haze-code.com/  `\n` 05 |   exemple   |    `:white_check_mark:`     | https://haze-code.com/  `\n` 06 |   exemple   |    `:x:`     | https://haze-code.com/  `\n` 07 |   exemple   |    `:white_check_mark:`     | https://haze-code.com/  `\n` 08 |   exemple   |    `:x:`     | https://haze-code.com/  `\n` 09 |   exemple   |    `:white_check_mark:`     | https://haze-code.com/  `\n` 10 |   exemple   |    `:x:`     | https://haze-code.com/  `' },
-        { name: '\u200B', value: '\u200B' },
-    )
-    .setImage(client.user.displayAvatarURL())
-    .setTimestamp()
-    .setFooter('Brain bot', client.user.displayAvatarURL());
-
-    const page3 = new MessageEmbed()
-    .setColor('#c96b8d')
-    .setTitle('Info du bot')
-    .setURL(client.user.displayAvatarURL())
-    .setAuthor('Brain bot', client.user.displayAvatarURL(), 'http://qdqsxsqdsqkhnkdjsnniufhksjdniohdlskkoihsollikh.com/')
-    .setDescription('Tout ce que vous devez savoir concernant le bot réalisé par "par la barbe de Merlin" !')
-    .setThumbnail('https://cdn.discordapp.com/avatars/536799645205135361/93860d695cb7ac4a12462d00af31ba0e.webp')
-    .addFields(
-        { name: 'Les Info', value: 'Brain bot est répond a la commande bb!<sujet> en cherchant sur le site https://haze-code.com le tuto associé a la recherche.\n Pour l\'instant sur le site les tuto dispo sont les suivants :\n ` id |     nom     | publique ? |           url           `\n` 01 |   exemple   |    `:white_check_mark:`     | https://haze-code.com/  `\n` 02 |   exemple   |    `:x:`     | https://haze-code.com/  `\n` 03 |   exemple   |    `:white_check_mark:`     | https://haze-code.com/  `\n` 04 |   exemple   |    `:x:`     | https://haze-code.com/  `\n` 05 |   exemple   |    `:white_check_mark:`     | https://haze-code.com/  `\n` 06 |   exemple   |    `:x:`     | https://haze-code.com/  `\n` 07 |   exemple   |    `:white_check_mark:`     | https://haze-code.com/  `\n` 08 |   exemple   |    `:x:`     | https://haze-code.com/  `\n` 09 |   exemple   |    `:white_check_mark:`     | https://haze-code.com/  `\n` 10 |   exemple   |    `:x:`     | https://haze-code.com/  `' },
-        { name: '\u200B', value: '\u200B' },
-    )
-    .setImage(client.user.displayAvatarURL())
-    .setTimestamp()
-    .setFooter('Brain bot', client.user.displayAvatarURL());
-
-    const page4 = new MessageEmbed()
-    .setColor('#c96b8d')
-    .setTitle('Info du bot')
-    .setURL(client.user.displayAvatarURL())
-    .setAuthor('Brain bot', client.user.displayAvatarURL(), 'http://qdqsxsqdsqkhnkdjsnniufhksjdniohdlskkoihsollikh.com/')
-    .setDescription('Tout ce que vous devez savoir concernant le bot réalisé par "par la barbe de Merlin" !')
-    .setThumbnail('https://cdn.discordapp.com/avatars/536799645205135361/93860d695cb7ac4a12462d00af31ba0e.webp')
-    .addFields(
-        { name: 'Les Info', value: 'Brain bot est répond a la commande bb!<sujet> en cherchant sur le site https://haze-code.com le tuto associé a la recherche.\n Pour l\'instant sur le site les tuto dispo sont les suivants :\n ` id |     nom     | publique ? |           url           `\n` 01 |   exemple   |    `:white_check_mark:`     | https://haze-code.com/  `\n` 02 |   exemple   |    `:x:`     | https://haze-code.com/  `\n` 03 |   exemple   |    `:white_check_mark:`     | https://haze-code.com/  `\n` 04 |   exemple   |    `:x:`     | https://haze-code.com/  `\n` 05 |   exemple   |    `:white_check_mark:`     | https://haze-code.com/  `\n` 06 |   exemple   |    `:x:`     | https://haze-code.com/  `\n` 07 |   exemple   |    `:white_check_mark:`     | https://haze-code.com/  `\n` 08 |   exemple   |    `:x:`     | https://haze-code.com/  `\n` 09 |   exemple   |    `:white_check_mark:`     | https://haze-code.com/  `\n` 10 |   exemple   |    `:x:`     | https://haze-code.com/  `' },
-        { name: '\u200B', value: '\u200B' },
-    )
-    .setImage(client.user.displayAvatarURL())
-    .setTimestamp()
-    .setFooter('Brain bot', client.user.displayAvatarURL());
-
-    const page5 = new MessageEmbed()
-    .setTitle('Page 5')
-    .setDescription('this is an example for page 5')
-
-    const page6 = new MessageEmbed()
-    .setTitle('Page 6')
-    .setDescription('this is an example for page 6')
-
-    const page7 = new MessageEmbed()
-    .setTitle('Page 7')
-    .setDescription('this is an example for page 7')
-
-    const page8 = new MessageEmbed()
-    .setTitle('Page 8')
-    .setDescription('this is an example for page 8')
-
-    const page9 = new MessageEmbed()
-    .setTitle('Page 9')
-    .setDescription('this is an example for page 9')
-
-    const page10 = new MessageEmbed()
-    .setTitle('Page 10')
-    .setDescription('this is an example for page 10')
+function pingv(interaction) {
+    const embed = new Discord.MessageEmbed()
+        .setTitle("Pong!")
+        .setDescription("Ce bot a été créé par <@536799645205135361> dans le but de vous aider a trouver des ressouces suceptible de vous aider !\nㅤ- `/ping` : pong! renvoie le délais de réponse avec le bot.\nㅤ- `/search` : recherche sur google sur le moteur spécifié.\nㅤ- `/help` : affiche ce message d'aide.\n ")
+        .setColor('#2F3136')
+    interaction.reply({embeds: [embed], ephemeral: true })
+    console.log("pong ! "+client.ws.ping  + "ms")
+}
 
 
-    const pages = [page1,page2,page3,page4,page5,page6,page7,page8,page9,page10]
+function pingr(interaction) {
+    const embed = new Discord.MessageEmbed()
+        .setTitle("Pong!")
+        .setDescription(`${client.ws.ping} ms    :satellite_orbital: `)
+        .setThumbnail("https://www.lalibre.be/resizer/WF615KUSqoNnx1lrgByLOzwuS8s=/640x0:2560x1280/768x512/filters:quality(70):format(jpg)/cloudfront-eu-central-1.images.arcpublishing.com/ipmgroup/T24ECASTIVBRZLNTJYKUNKMCAM.jpg")
+        .setColor('#2F3136')
 
-    const emoji = ["⏪", "⏩"]
+    const row = new Discord.MessageActionRow()
+        .addComponents(
+            new Discord.MessageButton()
+                .setCustomId('primary')
+                .setLabel('Ping again')
+                .setCustomId('Ping')
+                .setStyle('SECONDARY'),
 
-    const timeout = '1000000000'
+        );
+    interaction.reply({embeds: [embed], components: [row] , ephemeral: true })
+    console.log("pong ! "+client.ws.ping  + "ms")
+}
 
-    pagination(msg, pages, emoji, timeout)
-  }
-});
+function searchwgg(tthr) {
+    const usern = tthr.user
+    const rechercheembed = new Discord.MessageEmbed()
+        .setTitle("Recherche en cours...")
+        .setColor('#2F3136')
+    tthr.reply({embeds: [rechercheembed],ephemeral: true })
+    const search = tthr.options.getString('input');
+    const v = ggsearch(search,tthr.options.getString('search'));
+    var strsearch = "";
+    v.then(function(linkr){
+        for (var i = 0; i < linkr[0].length; i++){
+            strsearch += ""+linkr[1][i] + " :\n" + linkr[0][i] + "\n\n"
+        }
+        const embed = new Discord.MessageEmbed()
+            .setTitle("résultat")
+            .setAuthor("Brain Bot", client.user.avatarURL())
+            .setColor('#2F3136')
+            .setDescription(`Voici les résultat trouvé par google avec la recherche : " ${search}" \n\n`+strsearch)
+        console.log(strsearch)
+        tthr.editReply({embeds: [embed], ephemeral: true })
+    });
+}
 
-client.login('ODM4MTMxODQxNzcyNDIxMTcx.YI2pGg.b9_3WDG71TxfM60vIjX5GjgGU9I');
+function searchwgg2(tthr) {
+    //check if mp of user are close
+
+    const usern = tthr.author
+    const search = tthr.content;
+    const v = ggsearch(search,'mcreator');
+    var strsearch = "";
+    v.then(function(linkr){
+        for (var i = 0; i < linkr[0].length; i++){
+            strsearch += ""+linkr[1][i] + " :\n" + linkr[0][i] + "\n\n"
+        }
+        const embed = new Discord.MessageEmbed()
+            .setTitle("résultat")
+            .setAuthor("Brain Bot", client.user.avatarURL())
+            .setColor('#2F3136')
+            .setDescription(`Voici les ressources qui peuvent vous intéresser : \n\n`+strsearch)
+        console.log(strsearch)
+        if(tthr.channelId == 674189719789240320 || tthr.channelId==725398786033320087){
+            tthr.author.send({embeds: [embed]})
+                .catch(()=> console.log("pas de mp"))
+        } else {console.log('not send for bad channel !')}
+    });
+}
+
+
+client.login(config.token);
